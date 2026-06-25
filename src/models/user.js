@@ -11,7 +11,6 @@ const userSchema = new Schema(
 
     lastName: {
       type: String,
-      required: true,
       trim: true,
     },
 
@@ -39,6 +38,10 @@ const userSchema = new Schema(
       default: 0,
       min: 0,
     },
+    password:{
+      type:String,
+      required:true,
+    }
   },
   {
     timestamps: true, // adds createdAt and updatedAt
