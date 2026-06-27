@@ -1,14 +1,23 @@
-const express= require('express');
-const userMiddleware = require('../middlewares/userMiddleware');
-const userMiddleware=require('../middlewares/userMiddleware')
-const adminMiddleware=require("../middlewares/adminMiddleware")
-const authRouter=express.Router();
-const {register, login, logout,adminRegister}=require("../controllers/authController")
-authRouter.post("/register",register);
+const express = require("express");
 
-authRouter.post("/login",login);
+const authRouter = express.Router();
 
-authRouter.post("/logout",userMiddleware,logout);
+const userMiddleware = require("../middlewares/userMiddleware");
+const adminMiddleware = require("../middlewares/adminMiddleware");
 
-authRouter.post("/admin/register",adminMiddleware,adminRegister);
-//mai khud register kraungi isko
+const {
+  register,
+  login,
+  logout,
+  adminRegister,
+} = require("../controllers/authController");
+
+authRouter.post("/register", register);
+
+authRouter.post("/login", login);
+
+authRouter.post("/logout", userMiddleware, logout);
+
+authRouter.post("/admin/register", adminMiddleware, adminRegister);
+
+module.exports = authRouter;

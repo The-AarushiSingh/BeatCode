@@ -38,7 +38,7 @@ const register = async (req, res) => {
         emailId: user.emailId,
         role:'user'
       },
-      process.env.JWT_SECRET,
+      process.env.JWT_KEY,
       {
         expiresIn: "1d",
       },
@@ -55,10 +55,12 @@ const register = async (req, res) => {
       },
     });
   } catch (err) {
-    res.status(400).json({
-      message: err.message,
-    });
-  }
+  console.error(err);
+
+  res.status(400).json({
+    message: err.message,
+  });
+}
 };
 
 const login = async (req, res) => {
@@ -92,7 +94,7 @@ const login = async (req, res) => {
         emailId: user.emailId,
         role:user.role,
       },
-      process.env.JWT_SECRET,
+      process.env.JWT_KEY,
       {
         expiresIn: "1d",
       }

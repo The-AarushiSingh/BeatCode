@@ -1,3 +1,5 @@
+//validate.js
+
 const validator = require("validator");
 
 const validateSignUpData = (data) => {
@@ -5,11 +7,11 @@ const validateSignUpData = (data) => {
 
   const mandatoryFields = ["firstName", "emailId", "password"];
 
-  if (!mandatoryFields.every((field) => req.body[field])) {
+  if (!mandatoryFields.every((field) => data[field])) { 
     throw new Error("Missing required fields");
   }
 
-  if (!validator.isEmail(req.body.emailId)) {
+  if (!validator.isEmail(emailId)) { 
     throw new Error("Invalid Email");
   }
 

@@ -21,7 +21,7 @@ const adminMiddleware = async (req, res, next) => {
       });
     }
 
-    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    const payload = jwt.verify(token, process.env.JWT_KEY);
     if(payload.role!='admin')
         throw new Error("Invalid Token")
 
