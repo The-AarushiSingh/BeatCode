@@ -29,6 +29,7 @@ const register = async (req, res) => {
       firstName,
       emailId,
       password: hashedPassword,
+      role:"user"
     });
 
     // Generate JWT
@@ -88,6 +89,12 @@ const login = async (req, res) => {
       });
     }
 
+    const reply={
+      firstName:user.firstName,
+      emailId:user.emailId,
+      _id:user._id,
+    }
+
     const token = jwt.sign(
       {
         userId: user._id,
@@ -106,6 +113,7 @@ const login = async (req, res) => {
     });
 
     res.status(200).json({
+      user:reply,
       message: "Login Successful",
     });
   } catch (err) {
@@ -179,6 +187,7 @@ const adminRegister=async(req,res)=>{
       firstName,
       emailId,
       password: hashedPassword,
+      role: "admin",
     });
 
     // Generate JWT

@@ -1,0 +1,7 @@
+@import "tailwindcss";
+/* @import "daisyui"; */
+@plugin "daisyui";
+/*
+because DaisyUI was causing a Tailwind CSS parsing error due to the way it was being loaded with Tailwind v4, while Tailwind itself was working correctly.
+
+*/
