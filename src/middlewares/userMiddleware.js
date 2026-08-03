@@ -2,11 +2,9 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
-const JWT_SECRET = process.env.JWT_KEY || process.env.JWT_SECRET || 'fallback-secret-key';
-
 const userMiddleware = async (req, res, next) => {
   try {
-    // Check for token in cookies or header
+    // Get token from cookie or header
     let token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
 
     if (!token) {
@@ -16,12 +14,16 @@ const userMiddleware = async (req, res, next) => {
       });
     }
 
-    if (!JWT_SECRET || JWT_SECRET === 'fallback-secret-key') {
-      console.warn('⚠️ JWT_SECRET not properly configured');
+    if (!process.env.JWT_KEY) {
+      console.error('JWT_KEY not configured');
+      return res.status(500).json({
+        error: 'Server configuration error'
+      });
     }
 
-    const decoded = jwt.verify(token, JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
     
+    // Get user from database
     const user = await User.findById(decoded.userId);
     if (!user) {
       return res.status(401).json({
@@ -29,13 +31,14 @@ const userMiddleware = async (req, res, next) => {
       });
     }
 
+    // ✅ FIX: Set both req.user and req.result for compatibility
     req.user = {
       userId: user._id,
       emailId: user.emailId,
       role: user.role,
       firstName: user.firstName
     };
-    req.result = user;
+    req.result = user; // For backward compatibility
 
     next();
 
