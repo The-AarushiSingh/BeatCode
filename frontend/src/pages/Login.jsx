@@ -41,7 +41,6 @@ const Login = () => {
         maxWidth: '420px',
         boxShadow: '0 20px 60px rgba(0,0,0,0.8)'
       }}>
-        {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <h1 style={{
             fontSize: '42px',
@@ -74,13 +73,7 @@ const Login = () => {
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'block',
-              color: '#aaa',
-              fontSize: '14px',
-              fontWeight: '500',
-              marginBottom: '6px'
-            }}>
+            <label style={{ display: 'block', color: '#aaa', fontSize: '14px', fontWeight: '500', marginBottom: '6px' }}>
               Email Address
             </label>
             <input
@@ -107,13 +100,7 @@ const Login = () => {
           </div>
 
           <div style={{ marginBottom: '24px' }}>
-            <label style={{
-              display: 'block',
-              color: '#aaa',
-              fontSize: '14px',
-              fontWeight: '500',
-              marginBottom: '6px'
-            }}>
+            <label style={{ display: 'block', color: '#aaa', fontSize: '14px', fontWeight: '500', marginBottom: '6px' }}>
               Password
             </label>
             <input
@@ -155,33 +142,14 @@ const Login = () => {
               transition: 'transform 0.2s, box-shadow 0.2s',
               opacity: loading ? 0.7 : 1
             }}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 8px 25px rgba(108, 99, 255, 0.3)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = 'none';
-            }}
           >
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
 
-        <p style={{
-          textAlign: 'center',
-          marginTop: '24px',
-          color: '#666',
-          fontSize: '14px'
-        }}>
+        <p style={{ textAlign: 'center', marginTop: '24px', color: '#666', fontSize: '14px' }}>
           Don't have an account?{' '}
-          <Link to="/signup" style={{
-            color: '#6c63ff',
-            textDecoration: 'none',
-            fontWeight: '500'
-          }}>
+          <Link to="/signup" style={{ color: '#6c63ff', textDecoration: 'none', fontWeight: '500' }}>
             Sign Up
           </Link>
         </p>

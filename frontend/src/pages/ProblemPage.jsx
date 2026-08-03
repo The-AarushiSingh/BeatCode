@@ -4,7 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { getProblemById, submitSolution } from '../store/ProblemSlice';
 import { logout } from '../store/authSlice';
-import AIHelper from '../components/AIHelper'; // ✅ Import AI Helper
+import AIHelper from '../components/AIHelper';
 
 const ProblemPage = () => {
   const { id } = useParams();
@@ -36,7 +36,7 @@ const ProblemPage = () => {
     e.preventDefault();
     setSubmitting(true);
     setShowResult(false);
-    await dispatch(submitSolution({ problemId: id, code, language }));
+    const result = await dispatch(submitSolution({ problemId: id, code, language }));
     setSubmitting(false);
     setShowResult(true);
   };
@@ -122,12 +122,10 @@ const ProblemPage = () => {
       </header>
 
       <div style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
-        {/* Back button */}
         <Link to="/" style={{ color: '#6c63ff', textDecoration: 'none', display: 'inline-block', marginBottom: '20px' }}>
           ← Back to Problems
         </Link>
 
-        {/* Main content */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
           {/* Left: Problem Description */}
           <div style={{ 
@@ -256,7 +254,6 @@ const ProblemPage = () => {
               {submitting ? '⏳ Submitting...' : '🚀 Submit Solution'}
             </button>
 
-            {/* Results */}
             {showResult && submissionResult && (
               <div style={{ 
                 marginTop: '16px', 
@@ -279,7 +276,6 @@ const ProblemPage = () => {
               </div>
             )}
 
-            {/* ✅ AI HELPER COMPONENT */}
             <AIHelper 
               problemId={id} 
               code={code} 

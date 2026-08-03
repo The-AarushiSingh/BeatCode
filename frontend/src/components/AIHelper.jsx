@@ -85,7 +85,6 @@ const AIHelper = ({ problemId, code, language }) => {
         {loading && <span style={{ fontSize: '14px', color: '#888' }}>⏳ Thinking...</span>}
       </h4>
       
-      {/* Tab Buttons */}
       <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', marginBottom: '16px' }}>
         <button
           onClick={() => handleTabChange('hint')}
@@ -139,7 +138,6 @@ const AIHelper = ({ problemId, code, language }) => {
         </button>
       </div>
 
-      {/* Error Message */}
       {error && (
         <div style={{
           padding: '12px',
@@ -153,7 +151,6 @@ const AIHelper = ({ problemId, code, language }) => {
         </div>
       )}
 
-      {/* Hint Content */}
       {activeTab === 'hint' && hint && (
         <div style={{
           padding: '16px',
@@ -166,7 +163,6 @@ const AIHelper = ({ problemId, code, language }) => {
         </div>
       )}
 
-      {/* Review Content */}
       {activeTab === 'review' && review && (
         <div style={{
           padding: '16px',
@@ -179,7 +175,6 @@ const AIHelper = ({ problemId, code, language }) => {
         </div>
       )}
 
-      {/* Explanation Content */}
       {activeTab === 'explanation' && explanation && (
         <div style={{
           padding: '16px',
@@ -192,13 +187,8 @@ const AIHelper = ({ problemId, code, language }) => {
         </div>
       )}
 
-      {/* Loading State */}
       {loading && (
-        <div style={{
-          padding: '16px',
-          textAlign: 'center',
-          color: '#888'
-        }}>
+        <div style={{ padding: '16px', textAlign: 'center', color: '#888' }}>
           ⏳ AI is thinking...
         </div>
       )}

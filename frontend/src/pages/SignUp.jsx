@@ -79,13 +79,7 @@ const SignUp = () => {
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'block',
-              color: '#aaa',
-              fontSize: '14px',
-              fontWeight: '500',
-              marginBottom: '6px'
-            }}>
+            <label style={{ display: 'block', color: '#aaa', fontSize: '14px', fontWeight: '500', marginBottom: '6px' }}>
               Full Name
             </label>
             <input
@@ -112,13 +106,7 @@ const SignUp = () => {
           </div>
 
           <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'block',
-              color: '#aaa',
-              fontSize: '14px',
-              fontWeight: '500',
-              marginBottom: '6px'
-            }}>
+            <label style={{ display: 'block', color: '#aaa', fontSize: '14px', fontWeight: '500', marginBottom: '6px' }}>
               Email Address
             </label>
             <input
@@ -145,13 +133,7 @@ const SignUp = () => {
           </div>
 
           <div style={{ marginBottom: '16px' }}>
-            <label style={{
-              display: 'block',
-              color: '#aaa',
-              fontSize: '14px',
-              fontWeight: '500',
-              marginBottom: '6px'
-            }}>
+            <label style={{ display: 'block', color: '#aaa', fontSize: '14px', fontWeight: '500', marginBottom: '6px' }}>
               Password
             </label>
             <input
@@ -178,13 +160,7 @@ const SignUp = () => {
           </div>
 
           <div style={{ marginBottom: '24px' }}>
-            <label style={{
-              display: 'block',
-              color: '#aaa',
-              fontSize: '14px',
-              fontWeight: '500',
-              marginBottom: '6px'
-            }}>
+            <label style={{ display: 'block', color: '#aaa', fontSize: '14px', fontWeight: '500', marginBottom: '6px' }}>
               Confirm Password
             </label>
             <input
@@ -226,33 +202,14 @@ const SignUp = () => {
               transition: 'transform 0.2s, box-shadow 0.2s',
               opacity: loading ? 0.7 : 1
             }}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 8px 25px rgba(108, 99, 255, 0.3)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = 'none';
-            }}
           >
             {loading ? 'Creating Account...' : 'Sign Up'}
           </button>
         </form>
 
-        <p style={{
-          textAlign: 'center',
-          marginTop: '24px',
-          color: '#666',
-          fontSize: '14px'
-        }}>
+        <p style={{ textAlign: 'center', marginTop: '24px', color: '#666', fontSize: '14px' }}>
           Already have an account?{' '}
-          <Link to="/login" style={{
-            color: '#6c63ff',
-            textDecoration: 'none',
-            fontWeight: '500'
-          }}>
+          <Link to="/login" style={{ color: '#6c63ff', textDecoration: 'none', fontWeight: '500' }}>
             Login
           </Link>
         </p>
