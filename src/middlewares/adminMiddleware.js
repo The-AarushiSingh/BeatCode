@@ -1,46 +1,67 @@
-const jwt = require("jsonwebtoken");
-const User = require("../models/user");
-const redisClient = require("../config/redis");
+// src/middlewares/adminMiddleware.js
+const jwt = require('jsonwebtoken');
+const User = require('../models/user');
+
+const JWT_SECRET = process.env.JWT_KEY || process.env.JWT_SECRET || 'fallback-secret-key';
 
 const adminMiddleware = async (req, res, next) => {
   try {
-    const { token } = req.cookies;
+    let token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
 
     if (!token) {
       return res.status(401).json({
-        message: "Token not present",
+        error: 'Authentication required',
+        message: 'No token provided'
       });
     }
 
-    // Check Redis blocklist
-    const isBlocked = await redisClient.exists(`token:${token}`);
-
-    if (isBlocked) {
-      return res.status(401).json({
-        message: "Token is blocked. Please login again.",
-      });
+    if (!JWT_SECRET || JWT_SECRET === 'fallback-secret-key') {
+      console.warn('⚠️ JWT_SECRET not properly configured');
     }
 
-    const payload = jwt.verify(token, process.env.JWT_KEY);
-    if(payload.role!='admin')
-        throw new Error("Invalid Token")
-
-    const user = await User.findById(payload.userId);
-
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    const user = await User.findById(decoded.userId);
     if (!user) {
-      return res.status(404).json({
-        message: "User not found",
+      return res.status(401).json({
+        error: 'User not found'
       });
     }
 
-    req.user = user;
+    if (user.role !== 'admin') {
+      return res.status(403).json({
+        error: 'Admin access required'
+      });
+    }
+
+    req.user = {
+      userId: user._id,
+      emailId: user.emailId,
+      role: user.role,
+      firstName: user.firstName
+    };
+    req.result = user;
 
     next();
 
+  } catch (error) {
+    console.error('Admin auth error:', error.message);
     
-  } catch (err) {
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        error: 'Invalid token'
+      });
+    }
+    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        error: 'Token expired'
+      });
+    }
+    
     res.status(401).json({
-      message: err.message,
+      error: 'Authentication failed',
+      message: error.message
     });
   }
 };

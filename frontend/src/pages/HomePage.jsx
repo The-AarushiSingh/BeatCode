@@ -1,159 +1,169 @@
-import { useEffect, useState } from 'react';
-import { NavLink } from 'react-router'; // Fixed import
+// frontend/src/pages/HomePage.jsx
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import axiosClient from '../utils/axiosClient';
-import { logoutUser } from '../store/authSlice';
+import { Link } from 'react-router-dom';
+import { getProblems } from '../store/ProblemSlice';
+import { logout } from '../store/authSlice'; // ✅ Changed from logoutUser to logout
 
-function Homepage() {
+const HomePage = () => {
   const dispatch = useDispatch();
+  const { problems, loading } = useSelector((state) => state.problems);
   const { user } = useSelector((state) => state.auth);
-  const [problems, setProblems] = useState([]);
-  const [solvedProblems, setSolvedProblems] = useState([]);
-  const [filters, setFilters] = useState({
-    difficulty: 'all',
-    tag: 'all',
-    status: 'all' 
-  });
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
-    const fetchProblems = async () => {
-      try {
-        const { data } = await axiosClient.get('/problem/getAllProblem');
-        setProblems(data);
-      } catch (error) {
-        console.error('Error fetching problems:', error);
-      }
-    };
-
-    const fetchSolvedProblems = async () => {
-      try {
-        const { data } = await axiosClient.get('/problem/problemSolvedByUser');
-        setSolvedProblems(data);
-      } catch (error) {
-        console.error('Error fetching solved problems:', error);
-      }
-    };
-
-    fetchProblems();
-    if (user) fetchSolvedProblems();
-  }, [user]);
+    dispatch(getProblems());
+  }, [dispatch]);
 
   const handleLogout = () => {
-    dispatch(logoutUser());
-    setSolvedProblems([]); // Clear solved problems on logout
+    dispatch(logout()); // ✅ Changed from logoutUser to logout
   };
 
-  const filteredProblems = problems.filter(problem => {
-    const difficultyMatch = filters.difficulty === 'all' || problem.difficulty === filters.difficulty;
-    const tagMatch = filters.tag === 'all' || problem.tags === filters.tag;
-    const statusMatch = filters.status === 'all' || 
-                      solvedProblems.some(sp => sp._id === problem._id);
-    return difficultyMatch && tagMatch && statusMatch;
-  });
+  const filteredProblems = problems?.filter((p) =>
+    p.title?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
+
+  const getDifficultyColor = (difficulty) => {
+    switch (difficulty) {
+      case 'Easy': return '#00b894';
+      case 'Medium': return '#fdcb6e';
+      case 'Hard': return '#e17055';
+      default: return '#888';
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-base-200">
-      {/* Navigation Bar */}
-      <nav className="navbar bg-base-100 shadow-lg px-4">
-        <div className="flex-1">
-          <NavLink to="/" className="btn btn-ghost text-xl">LeetCode</NavLink>
-        </div>
-        <div className="flex-none gap-4">
-          <div className="dropdown dropdown-end">
-            <div tabIndex={0} className="btn btn-ghost">
-              {user?.firstName}
-            </div>
-            <ul className="mt-3 p-2 shadow menu menu-sm dropdown-content bg-base-100 rounded-box w-52">
-              <li><button onClick={handleLogout}>Logout</button></li>
-              {user.role=='admin'&&<li><NavLink to="/admin">Admin</NavLink></li>}
-            </ul>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <div className="container mx-auto p-4">
-        {/* Filters */}
-        <div className="flex flex-wrap gap-4 mb-6">
-          {/* New Status Filter */}
-          <select 
-            className="select select-bordered"
-            value={filters.status}
-            onChange={(e) => setFilters({...filters, status: e.target.value})}
+    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+      <header style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '30px',
+        flexWrap: 'wrap',
+        gap: '10px'
+      }}>
+        <h1 style={{ 
+          fontSize: '32px', 
+          background: 'linear-gradient(135deg, #6c63ff, #ff6b6b)', 
+          WebkitBackgroundClip: 'text', 
+          WebkitTextFillColor: 'transparent' 
+        }}>
+          BeatCode
+        </h1>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <span>Welcome, {user?.firstName || 'User'}!</span>
+          {user?.role === 'admin' && (
+            <Link to="/admin" style={{ color: '#6c63ff', textDecoration: 'none' }}>
+              Admin Panel
+            </Link>
+          )}
+          <button
+            onClick={handleLogout}
+            style={{
+              padding: '8px 16px',
+              background: '#e17055',
+              border: 'none',
+              borderRadius: '8px',
+              color: '#fff',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
           >
-            <option value="all">All Problems</option>
-            <option value="solved">Solved Problems</option>
-          </select>
-
-          <select 
-            className="select select-bordered"
-            value={filters.difficulty}
-            onChange={(e) => setFilters({...filters, difficulty: e.target.value})}
-          >
-            <option value="all">All Difficulties</option>
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-          </select>
-
-          <select 
-            className="select select-bordered"
-            value={filters.tag}
-            onChange={(e) => setFilters({...filters, tag: e.target.value})}
-          >
-            <option value="all">All Tags</option>
-            <option value="array">Array</option>
-            <option value="linkedList">Linked List</option>
-            <option value="graph">Graph</option>
-            <option value="dp">DP</option>
-          </select>
+            Logout
+          </button>
         </div>
+      </header>
 
-        {/* Problems List */}
-        <div className="grid gap-4">
-          {filteredProblems.map(problem => (
-            <div key={problem._id} className="card bg-base-100 shadow-xl">
-              <div className="card-body">
-                <div className="flex items-center justify-between">
-                  <h2 className="card-title">
-                    <NavLink to={`/problem/${problem._id}`} className="hover:text-primary">
-                      {problem.title}
-                    </NavLink>
-                  </h2>
-                  {solvedProblems.some(sp => sp._id === problem._id) && (
-                    <div className="badge badge-success gap-2">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                      Solved
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex gap-2">
-                  <div className={`badge ${getDifficultyBadgeColor(problem.difficulty)}`}>
-                    {problem.difficulty}
-                  </div>
-                  <div className="badge badge-info">
-                    {problem.tags}
-                  </div>
+      <div style={{ marginBottom: '24px' }}>
+        <input
+          type="text"
+          placeholder="Search problems..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '12px 16px',
+            background: '#1a1a2e',
+            border: '1px solid #2a2a4a',
+            borderRadius: '8px',
+            color: '#fff',
+            fontSize: '14px',
+          }}
+        />
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px' }}>Loading problems...</div>
+      ) : filteredProblems.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+          No problems found
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: '16px' }}>
+          {filteredProblems.map((problem) => (
+            <Link
+              key={problem._id}
+              to={`/problem/${problem._id}`}
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '16px 20px',
+                background: '#1a1a2e',
+                border: '1px solid #2a2a4a',
+                borderRadius: '12px',
+                textDecoration: 'none',
+                color: '#fff',
+                transition: 'transform 0.2s, border-color 0.2s',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateX(4px)';
+                e.currentTarget.style.borderColor = '#6c63ff';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateX(0)';
+                e.currentTarget.style.borderColor = '#2a2a4a';
+              }}
+            >
+              <div>
+                <h3 style={{ marginBottom: '4px' }}>{problem.title}</h3>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {problem.tags?.map((tag) => (
+                    <span
+                      key={tag}
+                      style={{
+                        padding: '2px 10px',
+                        background: '#2a2a4a',
+                        borderRadius: '12px',
+                        fontSize: '12px',
+                        color: '#aaa',
+                      }}
+                    >
+                      {tag}
+                    </span>
+                  ))}
                 </div>
               </div>
-            </div>
+              <div style={{ textAlign: 'right' }}>
+                <span
+                  style={{
+                    color: getDifficultyColor(problem.difficulty),
+                    fontWeight: '600',
+                    fontSize: '14px',
+                  }}
+                >
+                  {problem.difficulty}
+                </span>
+                <div style={{ fontSize: '12px', color: '#666', marginTop: '4px' }}>
+                  {problem.submissions || 0} submissions
+                </div>
+              </div>
+            </Link>
           ))}
         </div>
-      </div>
+      )}
     </div>
   );
-}
-
-const getDifficultyBadgeColor = (difficulty) => {
-  switch (difficulty.toLowerCase()) {
-    case 'easy': return 'badge-success';
-    case 'medium': return 'badge-warning';
-    case 'hard': return 'badge-error';
-    default: return 'badge-neutral';
-  }
 };
 
-export default Homepage;
+export default HomePage;

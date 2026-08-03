@@ -1,33 +1,39 @@
-// src/index.js - MAIN SERVER FILE
+// src/index.js
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 const app = express();
 
-// Middleware
+// ✅ Update CORS to allow frontend
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || '*',
-  credentials: true
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
+
+
 
 // Import routes
 const authRoutes = require('./routes/userAuth');
 const problemRoutes = require('./routes/prbCreator');
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/problems', problemRoutes);
+// ✅ CORRECT: Mount routes
+app.use('/api/auth', authRoutes);      // Auth routes
+app.use('/api/problems', problemRoutes); // Problem routes
 
 // Health check
 app.get('/health', (req, res) => {
   res.json({
     status: 'OK',
     timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development'
   });
 });
@@ -59,8 +65,7 @@ app.use((err, req, res, next) => {
   console.error('❌ Error:', err);
   res.status(500).json({
     error: 'Internal server error',
-    message: err.message,
-    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    message: err.message
   });
 });
 
@@ -70,12 +75,8 @@ const MONGODB_URI = process.env.MONGODB_URI;
 
 console.log('🚀 Starting BeatCode Server...');
 console.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
-console.log(`🔗 MongoDB: ${MONGODB_URI ? '✅ Configured' : '❌ Not configured'}`);
 
-mongoose.connect(MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
+mongoose.connect(MONGODB_URI)
   .then(() => {
     console.log('✅ Connected to MongoDB Atlas');
     app.listen(PORT, () => {
@@ -89,12 +90,3 @@ mongoose.connect(MONGODB_URI, {
     console.error('❌ MongoDB connection error:', err);
     process.exit(1);
   });
-
-// Graceful shutdown
-process.on('SIGINT', () => {
-  console.log('🛑 Shutting down gracefully...');
-  mongoose.connection.close(() => {
-    console.log('✅ MongoDB connection closed');
-    process.exit(0);
-  });
-});

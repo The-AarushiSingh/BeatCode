@@ -1,215 +1,184 @@
-const Problem = require("../models/problem");
-const Submission = require("../models/submission");
+// src/controllers/userSubmission.js
+const Problem = require("../models/problems");
+const Submission = require("../models/submissions");
 const User = require("../models/user");
-const {getLanguageById,submitBatch,submitToken} = require("../utils/problemUtility");
+const { validateWithJDoodle } = require("../utils/jdoodleValidator");
 
-const submitCode = async (req,res)=>{
-   
-    // 
-    try{
-      
-       const userId = req.result._id;
-       const problemId = req.params.id;
-
-       let {code,language} = req.body;
-
-      if(!userId||!code||!problemId||!language)
-        return res.status(400).send("Some field missing");
-      
-
-      if(language==='cpp')
-        language='c++'
-      
-      console.log(language);
-      
-    //    Fetch the problem from database
-       const problem =  await Problem.findById(problemId);
-    //    testcases(Hidden)
-    
-    //   Kya apne submission store kar du pehle....
-    const submittedResult = await Submission.create({
-          userId,
-          problemId,
-          code,
-          language,
-          status:'pending',
-          testCasesTotal:problem.hiddenTestCases.length
-     })
-
-    //    Judge0 code ko submit karna hai
-    
-    const languageId = getLanguageById(language);
-   
-    const submissions = problem.hiddenTestCases.map((testcase)=>({
-        source_code:code,
-        language_id: languageId,
-        stdin: testcase.input,
-        expected_output: testcase.output
-    }));
-
-    
-    const submitResult = await submitBatch(submissions);
-    
-    const resultToken = submitResult.map((value)=> value.token);
-
-    const testResult = await submitToken(resultToken);
-    
-
-    // submittedResult ko update karo
-    let testCasesPassed = 0;
-    let runtime = 0;
-    let memory = 0;
-    let status = 'accepted';
-    let errorMessage = null;
-
-
-    for(const test of testResult){
-        if(test.status_id==3){
-           testCasesPassed++;
-           runtime = runtime+parseFloat(test.time)
-           memory = Math.max(memory,test.memory);
-        }else{
-          if(test.status_id==4){
-            status = 'error'
-            errorMessage = test.stderr
-          }
-          else{
-            status = 'wrong'
-            errorMessage = test.stderr
-          }
-        }
-    }
-
-
-    // Store the result in Database in Submission
-    submittedResult.status   = status;
-    submittedResult.testCasesPassed = testCasesPassed;
-    submittedResult.errorMessage = errorMessage;
-    submittedResult.runtime = runtime;
-    submittedResult.memory = memory;
-
-    await submittedResult.save();
-    
-    // ProblemId ko insert karenge userSchema ke problemSolved mein if it is not persent there.
-    
-    // req.result == user Information
-
-    if(!req.result.problemSolved.includes(problemId)){
-      req.result.problemSolved.push(problemId);
-      await req.result.save();
-    }
-    
-    const accepted = (status == 'accepted')
-    res.status(201).json({
-      accepted,
-      totalTestCases: submittedResult.testCasesTotal,
-      passedTestCases: testCasesPassed,
-      runtime,
-      memory
-    });
-       
-    }
-    catch(err){
-      res.status(500).send("Internal Server Error "+ err);
-    }
-}
-
-
-const runCode = async(req,res)=>{
-    
-     // 
-     try{
-      const userId = req.result._id;
-      const problemId = req.params.id;
-
-      let {code,language} = req.body;
-
-     if(!userId||!code||!problemId||!language)
-       return res.status(400).send("Some field missing");
-
-   //    Fetch the problem from database
-      const problem =  await Problem.findById(problemId);
-   //    testcases(Hidden)
-      if(language==='cpp')
-        language='c++'
-
-   //    Judge0 code ko submit karna hai
-
-   const languageId = getLanguageById(language);
-
-   const submissions = problem.visibleTestCases.map((testcase)=>({
-       source_code:code,
-       language_id: languageId,
-       stdin: testcase.input,
-       expected_output: testcase.output
-   }));
-
-
-   const submitResult = await submitBatch(submissions);
-   
-   const resultToken = submitResult.map((value)=> value.token);
-
-   const testResult = await submitToken(resultToken);
-
-    let testCasesPassed = 0;
-    let runtime = 0;
-    let memory = 0;
-    let status = true;
-    let errorMessage = null;
-
-    for(const test of testResult){
-        if(test.status_id==3){
-           testCasesPassed++;
-           runtime = runtime+parseFloat(test.time)
-           memory = Math.max(memory,test.memory);
-        }else{
-          if(test.status_id==4){
-            status = false
-            errorMessage = test.stderr
-          }
-          else{
-            status = false
-            errorMessage = test.stderr
-          }
-        }
-    }
-
-   
+const submitSolution = async (req, res) => {
+  console.log('📝 New submission...');
   
-   res.status(201).json({
-    success:status,
-    testCases: testResult,
-    runtime,
-    memory
-   });
-      
-   }
-   catch(err){
-     res.status(500).send("Internal Server Error "+ err);
-   }
-}
+  try {
+    const { id: problemId } = req.params;
+    const { code, language } = req.body;
+    const userId = req.user?.userId || req.result?._id;
 
+    if (!userId || !code || !problemId || !language) {
+      return res.status(400).json({
+        error: "Missing required fields",
+        required: ["userId", "code", "problemId", "language"]
+      });
+    }
 
-module.exports = {submitCode,runCode};
+    const problem = await Problem.findById(problemId);
+    if (!problem) {
+      return res.status(404).json({ error: "Problem not found" });
+    }
 
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
+    const previousAttempts = await Submission.countDocuments({ userId, problemId });
+    const attemptNumber = previousAttempts + 1;
 
-//     language_id: 54,
-//     stdin: '2 3',
-//     expected_output: '5',
-//     stdout: '5',
-//     status_id: 3,
-//     created_at: '2025-05-12T16:47:37.239Z',
-//     finished_at: '2025-05-12T16:47:37.695Z',
-//     time: '0.002',
-//     memory: 904,
-//     stderr: null,
-//     token: '611405fa-4f31-44a6-99c8-6f407bc14e73',
+    const allTestCases = [...problem.publicTestCases, ...problem.hiddenTestCases];
+    
+    const executionResult = await validateWithJDoodle({
+      code,
+      language,
+      testCases: allTestCases,
+      template: problem.codeTemplates?.find(t => t.language === language)?.code || ''
+    });
 
+    const submission = new Submission({
+      userId,
+      problemId,
+      code,
+      language,
+      passed: executionResult.allPassed,
+      testResults: executionResult.results || [],
+      executionTime: executionResult.executionTime || 0,
+      error: executionResult.error || null,
+      status: executionResult.allPassed ? 'accepted' : 'wrong',
+      testCasesTotal: allTestCases.length,
+      testCasesPassed: executionResult.results?.filter(r => r.passed).length || 0,
+      attemptNumber
+    });
 
-// User.findByIdUpdate({
-// })
+    await submission.save();
 
-//const user =  User.findById(id)
-// user.firstName = "Mohit";
-// await user.save();
+    // Update problem stats
+    problem.submissions = (problem.submissions || 0) + 1;
+    if (executionResult.allPassed) {
+      problem.acceptedSubmissions = (problem.acceptedSubmissions || 0) + 1;
+    }
+    await problem.save();
+
+    // Update user stats
+    user.submissions = {
+      total: (user.submissions?.total || 0) + 1,
+      accepted: (user.submissions?.accepted || 0) + (executionResult.allPassed ? 1 : 0)
+    };
+    
+    // ✅ FIX: Use 'problemSolved' (not 'solvedProblems')
+    if (executionResult.allPassed) {
+      const alreadySolved = user.problemSolved?.some(
+        p => p.toString() === problemId
+      );
+      if (!alreadySolved) {
+        user.problemSolved = user.problemSolved || [];
+        user.problemSolved.push(problemId);
+      }
+    }
+    await user.save();
+
+    console.log(`✅ Submission ${submission._id} - ${executionResult.allPassed ? 'PASSED' : 'FAILED'}`);
+
+    res.json({
+      success: true,
+      submissionId: submission._id,
+      passed: executionResult.allPassed,
+      results: executionResult.results,
+      executionTime: executionResult.executionTime,
+      error: executionResult.error,
+      attemptNumber,
+      testCaseCount: {
+        total: allTestCases.length,
+        passed: executionResult.results?.filter(r => r.passed).length || 0,
+        failed: executionResult.results?.filter(r => !r.passed).length || 0
+      },
+      stats: {
+        totalSubmissions: problem.submissions,
+        acceptanceRate: problem.submissions > 0 
+          ? Math.round((problem.acceptedSubmissions / problem.submissions) * 100) 
+          : 0
+      }
+    });
+
+  } catch (error) {
+    console.error("❌ Submission error:", error);
+    res.status(500).json({
+      error: "Failed to process submission",
+      message: error.message
+    });
+  }
+};
+
+const getUserSubmissions = async (req, res) => {
+  try {
+    const userId = req.user?.userId || req.result?._id;
+    const { problemId } = req.params;
+
+    const query = { userId };
+    if (problemId) {
+      query.problemId = problemId;
+    }
+
+    const submissions = await Submission.find(query)
+      .populate('problemId', 'title difficulty')
+      .sort({ submittedAt: -1 })
+      .limit(50);
+
+    res.json({
+      success: true,
+      count: submissions.length,
+      submissions
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: "Failed to fetch submissions",
+      message: error.message
+    });
+  }
+};
+
+const getSubmissionById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.userId || req.result?._id;
+
+    const submission = await Submission.findById(id)
+      .populate('problemId', 'title difficulty');
+
+    if (!submission) {
+      return res.status(404).json({
+        error: "Submission not found"
+      });
+    }
+
+    if (submission.userId.toString() !== userId.toString() && req.user?.role !== 'admin') {
+      return res.status(403).json({
+        error: "Access denied"
+      });
+    }
+
+    res.json({
+      success: true,
+      submission
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: "Failed to fetch submission",
+      message: error.message
+    });
+  }
+};
+
+module.exports = {
+  submitSolution,
+  getUserSubmissions,
+  getSubmissionById
+};

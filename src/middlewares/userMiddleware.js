@@ -1,40 +1,66 @@
-const jwt = require("jsonwebtoken");
-const User = require("../models/user");
-const redisClient = require("../config/redis");
+// src/middlewares/userMiddleware.js
+const jwt = require('jsonwebtoken');
+const User = require('../models/user');
 
-const userMiddleware = (req, res, next) => {
+const JWT_SECRET = process.env.JWT_KEY || process.env.JWT_SECRET || 'fallback-secret-key';
+
+const userMiddleware = async (req, res, next) => {
   try {
-    // Get token from header
-    const authHeader = req.headers.authorization;
-    
-    // If no token, just continue as guest user
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      req.user = null; // Set user as null for guest access
-      return next();
+    // Check for token in cookies or header
+    let token = req.cookies?.token || req.headers.authorization?.split(' ')[1];
+
+    if (!token) {
+      return res.status(401).json({
+        error: 'Authentication required',
+        message: 'Please login to access this resource'
+      });
     }
 
-    const token = authHeader.split(' ')[1];
+    if (!JWT_SECRET || JWT_SECRET === 'fallback-secret-key') {
+      console.warn('⚠️ JWT_SECRET not properly configured');
+    }
+
+    const decoded = jwt.verify(token, JWT_SECRET);
     
-    // Check if JWT_SECRET is configured
-    if (!process.env.JWT_KEY) {
-      console.warn('⚠️ JWT_KEY not configured. Please set it in .env');
-      req.user = null;
-      return next();
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(401).json({
+        error: 'User not found'
+      });
+    }
+
+    req.user = {
+      userId: user._id,
+      emailId: user.emailId,
+      role: user.role,
+      firstName: user.firstName
+    };
+    req.result = user;
+
+    next();
+
+  } catch (error) {
+    console.error('User auth error:', error.message);
+    
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({
+        error: 'Invalid token',
+        message: 'Please login again'
+      });
     }
     
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_KEY);
-    req.user = decoded;
-    next();
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({
+        error: 'Session expired',
+        message: 'Please login again'
+      });
+    }
     
-  } catch (error) {
-    console.error('❌ Auth error:', error.message);
-    // For protected routes, this will be caught by the route handler
-    // For public routes, just continue as guest
-    req.user = null;
-    next();
+    res.status(401).json({
+      error: 'Authentication failed',
+      message: error.message
+    });
   }
 };
-
 
 module.exports = userMiddleware;

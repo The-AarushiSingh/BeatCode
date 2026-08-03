@@ -1,36 +1,40 @@
+// src/routes/userAuth.js
 const express = require('express');
+const authRouter = express.Router();
+const { 
+  register, 
+  login, 
+  logout, 
+  adminRegister, 
+  deleteProfile 
+} = require('../controllers/authController');
+const userMiddleware = require("../middlewares/userMiddleware");
+const adminMiddleware = require('../middlewares/adminMiddleware');
 
-const authRouter =  express.Router();
-const {register, login,logout, adminRegister,deleteProfile} = require('../controllers/userAuthent')
-const userMiddleware = require("../middleware/userMiddleware");
-const adminMiddleware = require('../middleware/adminMiddleware');
-
-// Register
+// Public routes (no auth)
 authRouter.post('/register', register);
 authRouter.post('/login', login);
+
+// Protected routes (auth required)
 authRouter.post('/logout', userMiddleware, logout);
-authRouter.post('/admin/register', adminMiddleware ,adminRegister);
-authRouter.delete('/deleteProfile',userMiddleware,deleteProfile);
-authRouter.get('/check',userMiddleware,(req,res)=>{
+authRouter.delete('/profile', userMiddleware, deleteProfile);
 
-    const reply = {
-        firstName: req.result.firstName,
-        emailId: req.result.emailId,
-        _id:req.result._id,
-        role:req.result.role,
-    }
+// Admin routes
+authRouter.post('/admin/register', adminMiddleware, adminRegister);
 
-    res.status(200).json({
-        user:reply,
-        message:"Valid User"
-    });
-})
-// authRouter.get('/getProfile',getProfile);
+// Check user (auth required)
+authRouter.get('/check', userMiddleware, (req, res) => {
+  const reply = {
+    firstName: req.result.firstName,
+    emailId: req.result.emailId,
+    _id: req.result._id,
+    role: req.result.role,
+  };
 
+  res.status(200).json({
+    user: reply,
+    message: "Valid User"
+  });
+});
 
 module.exports = authRouter;
-
-// login
-// logout
-// GetProfile
-

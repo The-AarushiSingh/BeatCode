@@ -1,24 +1,34 @@
-const express = require("express");
-const problemRouter = express.Router();
-
-const adminMiddleware = require("../middlewares/adminMiddleware");
-const userMiddleware = require("../middlewares/userMiddleware");
-
+// src/routes/prbCreator.js
+const express = require('express');
+const router = express.Router();
+const adminMiddleware = require('../middlewares/adminMiddleware');
+const userMiddleware = require('../middlewares/userMiddleware');
 const {
   createProblem,
+  getAllProblems,
+  getProblemById,
   updateProblem,
   deleteProblem,
-  getProblemById,
-  getAllProblems,
-  solvedProblem,
-} = require("../controllers/userProblem");
+  solvedProblem
+} = require('../controllers/userProblem');
+const {
+  submitSolution,
+  getUserSubmissions,
+  getSubmissionById
+} = require('../controllers/userSubmission');
 
-problemRouter.post("/create", adminMiddleware, createProblem);
-problemRouter.put("/update/:id", adminMiddleware, updateProblem);
-problemRouter.delete("/delete/:id", adminMiddleware, deleteProblem);
+// Public routes (no auth)
+router.get('/', getAllProblems);
+router.get('/:id', getProblemById);
 
-problemRouter.get("/getAll", userMiddleware, getAllProblems);
-problemRouter.get("/problemById/:id", userMiddleware, getProblemById);
-problemRouter.get("/problemsSolvedByUser", userMiddleware, solvedProblem);
+// User routes (auth required)
+router.get('/user/solved', userMiddleware, solvedProblem);
+router.post('/:id/submit', userMiddleware, submitSolution);
+router.get('/:id/submissions', userMiddleware, getUserSubmissions);
 
-module.exports = problemRouter;
+// Admin routes (admin auth required)
+router.post('/', adminMiddleware, createProblem);
+router.put('/:id', adminMiddleware, updateProblem);
+router.delete('/:id', adminMiddleware, deleteProblem);
+
+module.exports = router;
