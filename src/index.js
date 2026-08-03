@@ -1,293 +1,100 @@
-const express = require('express')
-const app = express();
+// src/index.js - MAIN SERVER FILE
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
 require('dotenv').config();
-const main =  require('./config/db')
-const cookieParser =  require('cookie-parser');
-const authRouter = require("./routes/userAuth");
-const redisClient = require('./config/redis');
-const problemRouter = require("./routes/problemCreator");
-const submitRouter = require("./routes/submit")
-const aiRouter = require("./routes/aiChatting")
-const videoRouter = require("./routes/videoCreator");
-const cors = require('cors')
 
-// console.log("Hello")
+const app = express();
 
+// Middleware
 app.use(cors({
-    origin: 'http://localhost:5173',
-    credentials: true 
-}))
+  origin: process.env.CORS_ORIGIN || '*',
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-app.use(express.json());
-app.use(cookieParser());
+// Import routes
+const authRoutes = require('./routes/userAuth');
+const problemRoutes = require('./routes/prbCreator');
 
-app.use('/user',authRouter);
-app.use('/problem',problemRouter);
-app.use('/submission',submitRouter);
-app.use('/ai',aiRouter);
-app.use("/video",videoRouter);
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/problems', problemRoutes);
 
+// Health check
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
 
-const InitalizeConnection = async ()=>{
-    try{
-
-        await Promise.all([main(),redisClient.connect()]);
-        console.log("DB Connected");
-        
-        app.listen(process.env.PORT, ()=>{
-            console.log("Server listening at port number: "+ process.env.PORT);
-        })
-
+// Root route
+app.get('/', (req, res) => {
+  res.json({
+    name: 'BeatCode API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      auth: '/api/auth',
+      problems: '/api/problems',
+      health: '/health'
     }
-    catch(err){
-        console.log("Error: "+err);
-    }
-}
-
-
-InitalizeConnection();
-
-
-
-// console.log("1");
-
-// const express = require("express");
-// console.log("2");
-
-// const app = express();
-// require("dotenv").config();
-// console.log("3");
-
-// const main = require("./config/db");
-// console.log("4");
-
-// const cookieParser = require("cookie-parser");
-// console.log("5");
-
-// const redisClient = require("./config/redis");
-// console.log("6");
-
-// const problemRouter = require("./routes/prbCreator");
-// console.log("7");
-
-// const authRouter = require("./routes/userAuth");
-// console.log("8");
-
-// app.use(express.json());
-// app.use(cookieParser());
-
-// //*Promise? "I promise your pizza will come."
-// //*In JavaScript:
-// //*const result = fetch(...)
-// //*The data isn't available immediately
-// //*So JavaScript says:
-// //*I'll give you a Promise.
-// //*The actual value will come later. 
-// /*
-// Why do we need it?
-
-// Imagine MongoDB connection.
-
-// mongoose.connect(...)
-
-// Connecting to a database takes time:
-
-// Internet
-// ↓
-// Atlas Server
-// ↓
-// Authentication
-// ↓
-// Connection
-
-// Maybe:
-
-// 2 seconds
-
-// Maybe:
-
-// 5 seconds
-
-// JavaScript doesn't want to freeze for 5 seconds.
-
-// So:
-
-// mongoose.connect(...)
-
-// returns a Promise.
-
-// Promise States
-
-// A Promise can be in 3 states:
-
-// Pending
-// Pizza being prepared
-
-// or
-
-// MongoDB connecting...
-// Fulfilled
-// Pizza arrived
-
-// or
-
-// MongoDB connected
-// Rejected
-// Pizza shop cancelled order
-
-// or
-
-// Wrong MongoDB password
-// What does await do?
-
-// Suppose:
-
-// await mongoose.connect(...)
-
-// Read it like:
-
-// Wait here.
-// Don't move to next line.
-// Until Promise finishes.
-
-// Example:
-
-// console.log("A");
-
-// await main();
-
-// console.log("B");
-
-// Output:
-
-// A
-// (wait)
-// B
-// Now Promise.all()
-
-// Suppose:
-
-// main()
-
-// takes:
-
-// 3 seconds
-
-// and
-
-// redisClient.connect()
-
-// takes:
-
-// 2 seconds
-
-// Without Promise.all:
-
-// await main();
-// await redisClient.connect();
-
-// Timeline:
-
-// 3 sec
-// +
-// 2 sec
-// =
-// 5 sec
-
-// With Promise.all:
-
-// await Promise.all([
-//    main(),
-//    redisClient.connect()
-// ]);
-
-// Timeline:
-
-// Mongo starts
-// Redis starts
-// together
-// 3 sec
-
-// Total:
-
-// 3 seconds
-
-// because we only wait for the slowest one.
-
-// What if one fails?
-
-// Suppose:
-
-// MongoDB connected ✔
-// Redis failed ❌
-
-// Then:
-
-// Promise.all(...)
-
-// fails.
-
-// And execution jumps to:
-
-// catch(err)
-
-// This is why your code has:
-
-// try{
-//    await Promise.all(...)
-// }
-// catch(err){
-//    console.log(err)
-// }
-// The Mental Translation
-
-// Whenever you see:
-
-// await Promise.all([
-//    main(),
-//    redisClient.connect()
-// ]);
-
-// Translate it to English:
-
-// Start MongoDB connection.
-// Start Redis connection.
-
-// Wait until BOTH are ready.
-
-// If either fails,
-// throw an error.
-
-// That's literally all it's doing.
-
-// And once this clicks, 90% of async backend code becomes much easier to read.
-// */
-// app.use("/user",authRouter)
-// app.use("/problem",problemRouter)
-// const initializeConnection = async () => {
-//   try {
-//     await Promise.all([main(), redisClient.connect()]);
-
-//     console.log("MongoDB and Redis Connected");
-
-//     app.listen(process.env.PORT, () => {
-//       console.log("Server listening on port " + process.env.PORT);
-//     });
-//   } catch (err) {
-//     console.log(err);
-//   }
-// };
-
-
-// initializeConnection();
-
-// // main()
-// // .then(async () => {
-// //   app.listen(process.env.PORT, () => {
-// //     console.log("Server is listening at PORT " + process.env.PORT);
-// //   });
-// // })
-// // .catch(err=>console.log("An Error has occured"+err))
-
-
-
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not found',
+    message: `Route ${req.method} ${req.url} not found`
+  });
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error('❌ Error:', err);
+  res.status(500).json({
+    error: 'Internal server error',
+    message: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
+
+// MongoDB Connection
+const PORT = process.env.PORT || 3000;
+const MONGODB_URI = process.env.MONGODB_URI;
+
+console.log('🚀 Starting BeatCode Server...');
+console.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
+console.log(`🔗 MongoDB: ${MONGODB_URI ? '✅ Configured' : '❌ Not configured'}`);
+
+mongoose.connect(MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+  .then(() => {
+    console.log('✅ Connected to MongoDB Atlas');
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📍 URL: http://localhost:${PORT}`);
+      console.log(`❤️ Health: http://localhost:${PORT}/health`);
+      console.log(`📝 API: http://localhost:${PORT}/api`);
+    });
+  })
+  .catch(err => {
+    console.error('❌ MongoDB connection error:', err);
+    process.exit(1);
+  });
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+  console.log('🛑 Shutting down gracefully...');
+  mongoose.connection.close(() => {
+    console.log('✅ MongoDB connection closed');
+    process.exit(0);
+  });
+});
