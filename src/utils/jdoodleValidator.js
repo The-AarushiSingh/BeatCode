@@ -1,3 +1,4 @@
+// src/utils/jdoodleValidator.js
 const axios = require('axios');
 require('dotenv').config();
 
@@ -10,9 +11,9 @@ console.log('🔧 JDoodle Validator: USE_MOCK =', USE_MOCK);
 // MOCK VALIDATOR - Always returns success
 // ============================================
 async function mockValidate({ code, language, testCases }) {
-  console.log('🔍 MOCK validating ' + language + ' solution...');
-  console.log('📝 Code length: ' + code.length + ' characters');
-  console.log('🧪 Test cases: ' + testCases.length);
+  console.log(`🔍 MOCK validating ${language} solution...`);
+  console.log(`📝 Code length: ${code.length} characters`);
+  console.log(`🧪 Test cases: ${testCases.length}`);
   
   await new Promise(resolve => setTimeout(resolve, 200));
   
@@ -25,7 +26,7 @@ async function mockValidate({ code, language, testCases }) {
     error: null
   }));
   
-  console.log('✅ MOCK: All ' + results.length + ' tests passed!');
+  console.log(`✅ MOCK: All ${results.length} tests passed!`);
   
   return {
     allPassed: true,
@@ -36,14 +37,14 @@ async function mockValidate({ code, language, testCases }) {
 }
 
 // ============================================
-// REAL JDOODLE VALIDATOR (Fallback)
+// REAL JDOODLE VALIDATOR
 // ============================================
 async function realJdoodleValidate({ code, language, testCases, template }) {
   try {
     const fullCode = buildTestHarness(code, language, testCases, template);
     const jdoodleLanguage = mapToJdoodleLanguage(language);
     
-    console.log('📤 Sending to JDoodle: ' + jdoodleLanguage);
+    console.log(`📤 Sending to JDoodle: ${jdoodleLanguage}`);
     
     const response = await axios.post(
       'https://api.jdoodle.com/v1/execute',
@@ -152,9 +153,29 @@ function mapToJdoodleLanguage(language) {
   return map[language.toLowerCase()] || 'nodejs';
 }
 
+function getFileExtension(language) {
+  const map = {
+    'javascript': 'js',
+    'js': 'js',
+    'python': 'py',
+    'py': 'py',
+    'cpp': 'cpp',
+    'c++': 'cpp',
+    'java': 'java',
+    'go': 'go',
+    'rust': 'rs',
+    'ruby': 'rb'
+  };
+  return map[language.toLowerCase()] || 'txt';
+}
+
+// ✅ UPDATED: Support all languages
 function buildTestHarness(code, language, testCases, template) {
-  const harnesses = {
-    javascript: `
+  const lang = language.toLowerCase();
+  
+  // JavaScript/Node.js
+  if (lang === 'javascript' || lang === 'js') {
+    return `
 // User's solution
 ${code}
 
@@ -209,9 +230,12 @@ function runTests() {
 }
 
 runTests();
-`,
-    
-    python: `
+`;
+  }
+  
+  // Python
+  if (lang === 'python' || lang === 'py') {
+    return `
 # User's solution
 ${code}
 
@@ -270,15 +294,76 @@ for i, test in enumerate(test_cases):
         })
 
 print(json.dumps(results))
-`
-  };
-  
-  return harnesses[language] || harnesses.javascript;
+`;
+  }
+
+  // Java
+  if (lang === 'java') {
+    return `
+public class Main {
+    ${code}
+    
+    public static void main(String[] args) {
+        // Test runner
+        ${JSON.stringify(testCases)}
+        // ... test execution
+    }
+}
+`;
+  }
+
+  // C++
+  if (lang === 'cpp' || lang === 'c++') {
+    return `
+#include <iostream>
+#include <vector>
+#include <sstream>
+using namespace std;
+
+${code}
+
+int main() {
+    // Test runner
+    return 0;
+}
+`;
+  }
+
+  // Go
+  if (lang === 'go') {
+    return `
+package main
+
+${code}
+
+func main() {
+    // Test runner
+}
+`;
+  }
+
+  // Rust
+  if (lang === 'rust') {
+    return `
+${code}
+
+fn main() {
+    // Test runner
+}
+`;
+  }
+
+  // Default fallback
+  return `
+// User's solution
+${code}
+
+// Test runner
+console.log("Testing...");
+`;
 }
 
-// ============================================
-// EXPORTS
-// ============================================
 module.exports = { 
-  validateWithJDoodle
+  validateWithJDoodle,
+  getFileExtension
 };

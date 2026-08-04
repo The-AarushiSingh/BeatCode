@@ -177,4 +177,96 @@ router.put('/:id', adminMiddleware, updateProblem);
 // Delete a problem
 router.delete('/:id', adminMiddleware, deleteProblem);
 
+// Leaderboard - No auth required
+router.get('/leaderboard', async (req, res) => {
+  try {
+    const User = require('../models/user');
+    const users = await User.aggregate([
+      {
+        $project: {
+          username: '$firstName',
+          email: '$emailId',
+          solvedCount: { $size: '$problemSolved' },
+          totalSubmissions: '$submissions.total',
+          acceptedSubmissions: '$submissions.accepted',
+          acceptanceRate: {
+            $cond: [
+              { $gt: ['$submissions.total', 0] },
+              { 
+                $multiply: [
+                  { $divide: ['$submissions.accepted', '$submissions.total'] }, 
+                  100
+                ] 
+              },
+              0
+            ]
+          }
+        }
+      },
+      { $sort: { solvedCount: -1, acceptanceRate: -1 } },
+      { $limit: 50 }
+    ]);
+    
+    res.json({
+      success: true,
+      users
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Time stats endpoint
+router.get('/submissions/time-stats', userMiddleware, async (req, res) => {
+  try {
+    const userId = req.user?.userId || req.result?._id;
+    const Submission = require('../models/submissions');
+    const Problem = require('../models/problems');
+    
+    // Get all submissions
+    const submissions = await Submission.find({ 
+      userId, 
+      passed: true 
+    }).populate('problemId');
+    
+    // Calculate stats
+    const stats = {
+      totalTime: 0,
+      averageTime: 0,
+      fastestTime: Infinity,
+      slowestTime: 0,
+      problemsSolved: submissions.length,
+      byDifficulty: { Easy: { count: 0, avgTime: 0 }, Medium: { count: 0, avgTime: 0 }, Hard: { count: 0, avgTime: 0 } }
+    };
+    
+    let totalTime = 0;
+    submissions.forEach(sub => {
+      const time = sub.executionTime || 0;
+      totalTime += time;
+      if (time < stats.fastestTime) stats.fastestTime = time;
+      if (time > stats.slowestTime) stats.slowestTime = time;
+      
+      const difficulty = sub.problemId?.difficulty || 'Easy';
+      if (stats.byDifficulty[difficulty]) {
+        stats.byDifficulty[difficulty].count += 1;
+        stats.byDifficulty[difficulty].avgTime += time;
+      }
+    });
+    
+    stats.totalTime = totalTime;
+    stats.averageTime = submissions.length > 0 ? totalTime / submissions.length : 0;
+    
+    // Calculate averages per difficulty
+    Object.keys(stats.byDifficulty).forEach(key => {
+      if (stats.byDifficulty[key].count > 0) {
+        stats.byDifficulty[key].avgTime = stats.byDifficulty[key].avgTime / stats.byDifficulty[key].count;
+      }
+    });
+    
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router;

@@ -34,12 +34,12 @@ const submitSolution = async (req, res) => {
 
     const allTestCases = [...problem.publicTestCases, ...problem.hiddenTestCases];
     
-    const executionResult = await validateWithJDoodle({
-      code,
-      language,
-      testCases: allTestCases,
-      template: problem.codeTemplates?.find(t => t.language === language)?.code || ''
-    });
+     const executionResult = await validateWithJDoodle({
+    code,
+    language,  // ✅ This is passed from frontend
+    testCases: allTestCases,
+    template: problem.codeTemplates?.find(t => t.language === language)?.code || ''
+  });
 
     const submission = new Submission({
       userId,

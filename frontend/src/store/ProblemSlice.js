@@ -65,10 +65,23 @@ export const deleteProblem = createAsyncThunk(
   }
 );
 
+export const getSolvedProblems = createAsyncThunk(
+  'problems/getSolved',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axiosClient.get('/problems/user/solved');
+      return response.solvedProblems || [];
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.message || error.message);
+    }
+  }
+);
+
 const initialState = {
   problems: [],
   currentProblem: null,
   submissionResult: null,
+  solvedProblems: [], // ✅ ADD THIS
   loading: false,
   error: null,
 };
@@ -96,6 +109,7 @@ const problemSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+      
       // Get problem by ID
       .addCase(getProblemById.pending, (state) => {
         state.loading = true;
@@ -109,6 +123,7 @@ const problemSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
+      
       // Submit solution
       .addCase(submitSolution.pending, (state) => {
         state.loading = true;
@@ -122,13 +137,29 @@ const problemSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
       })
-      // ✅ Create problem (FIXED - removed extra dot)
+      
+      // Create problem
       .addCase(createProblem.fulfilled, (state, action) => {
         state.problems.push(action.payload);
       })
-      // ✅ Delete problem (FIXED - removed extra dot)
+      
+      // Delete problem
       .addCase(deleteProblem.fulfilled, (state, action) => {
         state.problems = state.problems.filter(p => p._id !== action.payload);
+      })
+      
+      // ✅ Get solved problems - FIXED: inside builder
+      .addCase(getSolvedProblems.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(getSolvedProblems.fulfilled, (state, action) => {
+        state.loading = false;
+        state.solvedProblems = action.payload;
+      })
+      .addCase(getSolvedProblems.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });

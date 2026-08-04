@@ -1,7 +1,112 @@
-@import "tailwindcss";
-/* @import "daisyui"; */
-@plugin "daisyui";
-/*
-because DaisyUI was causing a Tailwind CSS parsing error due to the way it was being loaded with Tailwind v4, while Tailwind itself was working correctly.
+/* frontend/src/index.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
-*/
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #0a0a0a;
+  color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #6c63ff, #4f46e5);
+  border-radius: 3px;
+}
+
+/* Gradient Text Class */
+.gradient-text {
+  background: linear-gradient(135deg, #6c63ff 0%, #a78bfa 50%, #4f46e5 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glass Card Effect */
+.glass-card {
+  background: rgba(20, 20, 20, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(108, 99, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+/* Glow Effect */
+.glow {
+  box-shadow: 0 0 40px rgba(108, 99, 255, 0.1), 0 0 80px rgba(108, 99, 255, 0.05);
+}
+
+/* Button Gradient */
+.btn-gradient {
+  background: linear-gradient(135deg, #6c63ff 0%, #4f46e5 100%);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.btn-gradient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(108, 99, 255, 0.3);
+}
+
+/* Input Focus Glow */
+.input-glow:focus {
+  border-color: #6c63ff;
+  box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.15), 0 0 20px rgba(108, 99, 255, 0.05);
+}
+
+/* Card Hover Effect */
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid #2a2a2a;
+}
+
+.card-hover:hover {
+  border-color: #6c63ff;
+  transform: translateX(6px);
+  box-shadow: 0 4px 24px rgba(108, 99, 255, 0.08);
+}
+
+/* Difficulty Badges */
+.badge-easy {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.1);
+  padding: 2px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.badge-medium {
+  color: #eab308;
+  background: rgba(234, 179, 8, 0.1);
+  padding: 2px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(234, 179, 8, 0.2);
+}
+
+.badge-hard {
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 2px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
