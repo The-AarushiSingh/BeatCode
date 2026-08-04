@@ -1,8 +1,11 @@
 // frontend/src/utils/axiosClient.js
 import axios from 'axios';
 
+// ✅ Use your live backend URL
+const API_URL = 'https://beatcode-do9q.onrender.com/api';
+
 const axiosClient = axios.create({
-  baseURL: 'http://localhost:3000/api',
+  baseURL: API_URL,
   timeout: 30000,
   withCredentials: true,
   headers: {
