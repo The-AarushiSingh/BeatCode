@@ -9,12 +9,19 @@ const app = express();
 
 // ✅ Update CORS to allow frontend
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000'],
+  origin: [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'http://localhost:3000',
+    'https://beatcode-do9q.onrender.com', // Your backend URL
+    'https://beatcode-xi.vercel.app', // ✅ Your Vercel frontend URL
+    /\.vercel\.app$/, // Allow all Vercel preview deployments
+    /\.onrender\.com$/ // Allow all Render preview deployments
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
 }));
-
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
